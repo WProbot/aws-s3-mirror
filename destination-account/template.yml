@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: Mirror S3 objects from one bucket to another
+
+Metadata:
+  Author: Michael Ludvig <michael.ludvig@enterpriseit.co.nz>
+  Description: |-
+    Continuously mirror objects from S3 bucket to another account.
+
+Parameters:
+  SourceAccount:
+    Type: String
+    Description: Source AWS Account ID
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: Private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+        - Action:
+          - "s3:PutObject*"
+          Effect: Allow
+          Resource: !Sub arn:aws:s3:::${Bucket}/*
+          Principal:
+            AWS: !Sub "arn:aws:iam::${SourceAccount}:root"
+
+Outputs:
+  Bucket:
+    Value: !Ref Bucket
