@@ -47,9 +47,15 @@ Resources:
       Path: /
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      #- arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess
-      - arn:aws:iam::aws:policy/AmazonS3FullAccess
       Policies:
+      - PolicyName: ReadFromSource
+        PolicyDocument:
+          Statement:
+          - Action:
+            - s3:GetObject*
+            Effect: Allow
+            #Resource: !Sub "arn:aws:s3:::${Bucket}/*"  # Creates circular dependency!
+            Resource: '*'
       - PolicyName: WriteToTarget
         PolicyDocument:
           Statement:
