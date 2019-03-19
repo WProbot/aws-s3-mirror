@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
-Description: Mirror S3 objects from one bucket to another
+Description: S3 Bucket Backup
 
 Metadata:
   Author: Michael Ludvig <michael.ludvig@enterpriseit.co.nz>
@@ -8,7 +8,7 @@ Metadata:
     Continuously mirror objects from S3 bucket to another account.
 
 Parameters:
-  SourceAccount:
+  SourceAccountId:
     Type: String
     Description: Source AWS Account ID
 
@@ -36,11 +36,15 @@ Resources:
       PolicyDocument:
         Statement:
         - Action:
-          - "s3:PutObject*"
+          - s3:PutObject
+          - s3:PutObjectAcl
+          - s3:PutObjectTagging
+          - s3:DeleteObject
+          - s3:DeleteObjectTagging
           Effect: Allow
           Resource: !Sub arn:aws:s3:::${Bucket}/*
           Principal:
-            AWS: !Sub "arn:aws:iam::${SourceAccount}:root"
+            AWS: !Sub "arn:aws:iam::${SourceAccountId}:root"
 
 Outputs:
   Bucket:
