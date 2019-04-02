@@ -38,6 +38,14 @@ Resources:
         - Action:
           - s3:PutObject
           - s3:PutObjectAcl
+          Effect: Allow
+          Resource: !Sub arn:aws:s3:::${Bucket}/*
+          Principal:
+            AWS: !Sub "arn:aws:iam::${SourceAccountId}:root"
+          Condition:
+            StringEquals:
+              s3:x-amz-acl: bucket-owner-full-control
+        - Action:
           - s3:PutObjectTagging
           - s3:DeleteObject
           - s3:DeleteObjectTagging
