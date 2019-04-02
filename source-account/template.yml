@@ -9,31 +9,15 @@ Metadata:
     Continuously mirror objects from S3 bucket to another account.
 
 Parameters:
+  SourceBucket:
+    Type: String
+    Description: Source S3 bucket. Must be readable by our Lambda function.
+
   TargetBucket:
     Type: String
     Description: Target S3 bucket. Must be writeable by our Lambda function.
 
 Resources:
-  Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      AccessControl: Private
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: True
-        BlockPublicPolicy: True
-        IgnorePublicAcls: True
-        RestrictPublicBuckets: True
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-        - ServerSideEncryptionByDefault:
-            SSEAlgorithm: AES256
-      VersioningConfiguration:
-        Status: Enabled
-      NotificationConfiguration:
-        LambdaConfigurations:
-        - Event: "s3:ObjectCreated:*"
-          Function: !GetAtt CopierLambda.Arn
-
   CopierLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -55,12 +39,14 @@ Resources:
             - s3:GetObject*
             Effect: Allow
             #Resource: !Sub "arn:aws:s3:::${Bucket}/*"  # Creates circular dependency!
+            Resource: !Sub "arn:aws:s3:::${SourceBucket}/*"  # Creates circular dependency!
             Resource: '*'
       - PolicyName: WriteToTarget
         PolicyDocument:
           Statement:
           - Action:
             - s3:PutObject*
+            - s3:DeleteObject*
             Effect: Allow
             Resource: !Sub "arn:aws:s3:::${TargetBucket}/*"
 
@@ -87,9 +73,15 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       Principal: s3.amazonaws.com
-      SourceArn: !GetAtt Bucket.Arn
+      SourceArn: !Sub "arn:aws:s3:::${SourceBucket}"
       FunctionName: !GetAtt CopierLambda.Arn
 
 Outputs:
-  Bucket:
-    Value: !Ref Bucket
+  SourceBucket:
+    Value: !Ref SourceBucket
+
+  CopierLambda:
+    Value: !Ref CopierLambda
+
+  CopierLambdaArn:
+    Value: !GetAtt CopierLambda.Arn
